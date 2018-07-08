@@ -1,0 +1,1510 @@
+{
+	"info": {
+		"_postman_id": "7034866c-69d1-418b-9087-7152a2ff969e",
+		"name": "Forge Workshop",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "OSS",
+			"description": "",
+			"item": [
+				{
+					"name": "new bucket",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (request.data) {",
+									"    var requestData = JSON.parse(request.data);",
+									"    postman.setEnvironmentVariable(\"bucketKey\", requestData.bucketKey);",
+									"    postman.setEnvironmentVariable(\"bucketPolicy\", requestData.policyKey);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bucketKey\":\"xiaodong-persistent-bucket-test1\",\n  \"policyKey\":\"persistent\"\n}"
+						},
+						"url": "{{base_domain}}/oss/v2/buckets"
+					},
+					"response": []
+				},
+				{
+					"name": "File to OSS",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "df939246-9137-48ff-958a-dd03de848734",
+								"type": "text/javascript",
+								"exec": [
+									"var CryptoJS = require(\"crypto-js\")",
+									"",
+									"if (responseCode.code === 200) {",
+									"    var data = JSON.parse(responseBody);",
+									"    postman.setEnvironmentVariable(\"objectId\", data.objectId);",
+									"    ",
+									"    //Encrypt",
+									"    var rawStr = CryptoJS.enc.Utf8.parse(postman.getEnvironmentVariable('objectId'))",
+									"    var base64 = CryptoJS.enc.Base64.stringify(rawStr)",
+									"    console.log(`Encrypted value: ${base64}`) ",
+									"",
+									"    postman.setEnvironmentVariable(\"urnBase64\", base64);",
+									"    postman.setEnvironmentVariable(\"file_location\", data.location);",
+									"}",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": "{{base_domain}}/oss/v2/buckets/{{bucketKey}}/objects/RevitNative.nwd"
+					},
+					"response": []
+				},
+				{
+					"name": "GET formats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/formats"
+					},
+					"response": []
+				},
+				{
+					"name": "POST job",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"",
+									"var setEnvVar = function (tar, src) {",
+									"    if (!src) {",
+									"        return;",
+									"    }",
+									"    postman.setEnvironmentVariable(tar, src);",
+									"}",
+									"",
+									"if (data) {",
+									"    if (data.urn) {",
+									"        setEnvVar(\"urnBase64\", data.urn);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-ads-force",
+								"value": "true"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"urn\": \"{{urnBase64}}\" \n    },\n    \"output\": {\n        \"destination\": {\n            \"region\": \"us\"\n        },\n        \"formats\": [\n        {\n            \"type\": \"svf\",\n             \"views\":[\"2d\", \"3d\"]\n        }]\n    }\n}"
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/job"
+					},
+					"response": []
+				},
+				{
+					"name": "POST webhook for job",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2a4899ac-670a-4789-834a-7ca5526c0a8f",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"callbackUrl\": \"http://7a97d378.ngrok.io/getForgeMDNotify\",\n  \"scope\": {\n    \"workflow\": \"8a73799f-dfb2-4152-8b69-826aa81f0929\"\n  }\n}"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/derivative/events/extraction.finished/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "POST localhost test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4236ea78-8a99-4331-8aef-18c5209a224c",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"mytest\":\"mytestvalue\"}"
+						},
+						"url": "http://7a97d378.ngrok.io/getForgeMDNotify"
+					},
+					"response": []
+				},
+				{
+					"name": "POST job with webhook",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"",
+									"var setEnvVar = function (tar, src) {",
+									"    if (!src) {",
+									"        return;",
+									"    }",
+									"    postman.setEnvironmentVariable(tar, src);",
+									"}",
+									"",
+									"if (data) {",
+									"    if (data.urn) {",
+									"        setEnvVar(\"urnBase64\", data.urn);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-ads-force",
+								"value": "true"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"urn\": \"{{urnBase64}}\" \n    },\n    \"misc\": {\n    \"workflow\": \"8a73799f-dfb2-4152-8b69-826aa81f0929\"\n    },\n    \"output\": {\n        \"destination\": {\n            \"region\": \"us\"\n        },\n        \"formats\": [\n        {\n            \"type\": \"svf\",\n             \"views\":[\"2d\", \"3d\"]\n        }]\n    }\n}"
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/job"
+					},
+					"response": []
+				},
+				{
+					"name": "POST job - zip",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"",
+									"var setEnvVar = function (tar, src) {",
+									"    if (!src) {",
+									"        return;",
+									"    }",
+									"    postman.setEnvironmentVariable(tar, src);",
+									"}",
+									"",
+									"if (data) {",
+									"    if (data.urn) {",
+									"        setEnvVar(\"urnBase64\", data.urn);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-ads-force",
+								"value": "true"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"input\": {\n        \"urn\": \"{{urnBase64}}\" ,\n        \"compressedUrn\":true,\n        \"rootFilename\":\"{{rootFileName}}\"\n    },\n    \"output\": {\n        \"destination\": {\n            \"region\": \"us\"\n        },\n        \"formats\": [\n        {\n            \"type\": \"svf\",\n            \"views\":[\"2d\", \"3d\"]\n        }]\n    }\n}"
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/job"
+					},
+					"response": []
+				},
+				{
+					"name": "GET manifest",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json,application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/{{urnBase64}}/manifest"
+					},
+					"response": []
+				},
+				{
+					"name": "GET metadata",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/{{urnBase64}}/metadata"
+					},
+					"response": []
+				},
+				{
+					"name": "GET metadata/​:guid",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/{{urnBase64}}/metadata/{{metadata_guid}}"
+					},
+					"response": []
+				},
+				{
+					"name": "GET :urn/metadata/:guid/properties",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/{{urnBase64}}/metadata/{{metadata_guid}}/properties"
+					},
+					"response": []
+				},
+				{
+					"name": "buckets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_domain}}/oss/v2/buckets?limit=100",
+							"host": [
+								"{{base_domain}}"
+							],
+							"path": [
+								"oss",
+								"v2",
+								"buckets"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "bucket details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (responseCode.code === 200 && responseBody) {",
+									"    var data = JSON.parse(responseBody);",
+									"    postman.setEnvironmentVariable(\"bucketKey\", data.bucketKey);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/oss/v2/buckets/{{bucketKey}}/details"
+					},
+					"response": []
+				},
+				{
+					"name": "bucket objects",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/oss/v2/buckets/{{bucketKey}}/objects"
+					},
+					"response": []
+				},
+				{
+					"name": "object details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/oss/v2/buckets/{{bucketKey}}/objects/{{objectId}}/details"
+					},
+					"response": []
+				},
+				{
+					"name": "Download Object",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{file_location}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SaaS",
+			"description": "",
+			"item": [
+				{
+					"name": "hubs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{3_legged_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/project/v1/hubs"
+					},
+					"response": []
+				},
+				{
+					"name": "hub",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{3_legged_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/project/v1/hubs/{{hub_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "projects",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{3_legged_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/project/v1/hubs/{{hub_id}}/projects"
+					},
+					"response": []
+				},
+				{
+					"name": "project",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/project/v1/hubs/{{hub_id}}/projects/{{project_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "folder contents",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{3_legged_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/data/v1/projects/{{project_id}}/folders/{{folder_id}}/contents"
+					},
+					"response": []
+				},
+				{
+					"name": "folder",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/data/v1/projects/{{project_id}}/folders/{{folder_id}}/topFolders"
+					},
+					"response": []
+				},
+				{
+					"name": "item",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{3_legged_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/data/v1/projects/{{project_id}}/items/{{item_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "ref",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{3_legged_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/data/v1/projects/{{project_id}}/versions/{{version_id}}/refs"
+					},
+					"response": []
+				},
+				{
+					"name": "versions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{3_legged_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/data/v1/projects/{{project_id}}/items/{{item_id}}/versions"
+					},
+					"response": []
+				},
+				{
+					"name": "one version",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/data/v1/projects/{{project_id}}/versions/{{version_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "GET manifest",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/vnd.api+json,application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/{{urnBase64}}/manifest"
+					},
+					"response": []
+				},
+				{
+					"name": "GET metadata",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/{{urnBase64}}/metadata"
+					},
+					"response": []
+				},
+				{
+					"name": "GET :urn/metadata/:guid/properties",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/modelderivative/v2/designdata/{{urnBase64}}/metadata/{{metadata_guid}}/properties"
+					},
+					"response": []
+				},
+				{
+					"name": "post to project storage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (responseCode.code === 201) {",
+									"    var id = JSON.parse(responseBody).data.id;",
+									"    var objectIdParams = id.split(\"/\");",
+									"    var objectNameValue = objectIdParams[objectIdParams.length - 1];",
+									"    // then split again by :",
+									"    var bucketKeyParams = objectIdParams[objectIdParams.length - 2].split(':');",
+									"    // and get the BucketKey",
+									"    var bucketKeyValue = bucketKeyParams[bucketKeyParams.length - 1];",
+									"    postman.setEnvironmentVariable(\"objectname\", objectNameValue);",
+									"        postman.setEnvironmentVariable(\"bucketKey\", bucketKeyValue);",
+									"",
+									"     ",
+									"}",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/vnd.api+json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        jsonapi: {\n            version: \"1.0\"\n        },\n        data: {\n            type: 'objects',\n            attributes: {\n                name: \"MyTestObject.png\"\n            },\n            relationships: {\n                target: {\n                    data: {\n                        type: \"folders\",\n                        id: \"{{folder_id}}\"\n                    }\n                }\n            }\n        }\n    }"
+						},
+						"url": "{{base_domain}}/data/v1/projects/{{project_id}}/storage"
+					},
+					"response": []
+				},
+				{
+					"name": "obect to project",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "eba4ec28-fe6a-45f2-bd8f-21585dbfa085",
+								"type": "text/javascript",
+								"exec": [
+									"var CryptoJS = require(\"crypto-js\")",
+									"",
+									"if (responseCode.code === 200) {",
+									"    var data = JSON.parse(responseBody);",
+									"    postman.setEnvironmentVariable(\"objectId\", data.objectId);",
+									"}",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": "{{base_domain}}/oss/v2/buckets/{{bucketKey}}/objects/{{objectname}}"
+					},
+					"response": []
+				},
+				{
+					"name": "add item to project",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/vnd.api+json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        jsonapi: {\n            version: \"1.0\"\n        },\n        data: {\n            type: \"items\",\n            attributes: {\n                displayName: \"{{objectname}}\",\n                extension: {\n                    type: \"items:autodesk.core:File\",\n                    version: \"1.0\"\n                }\n            },\n            relationships: {\n                tip: {\n                    data: {\n                        type: \"versions\",\n                        id: \"1\"\n                    }\n                },\n                parent: {\n                    data: {\n                        type: \"folders\",\n                        id: \"{{folder_id}}\"\n                    }\n                }\n            }\n        },\n        included: [{\n            type: \"versions\",\n            id: \"1\",\n            attributes: {\n                name: \"{{objectname}}\",\n                extension: {\n                    type: \"versions:autodesk.core:File\",\n                    version: \"1.0\"\n                }\n            },\n            relationships: {\n                storage: {\n                    data: {\n                        type: \"objects\",\n                        id: \"{{objectId}}\"\n                    }\n                }\n            }\n        }]\n    }"
+						},
+						"url": "{{base_domain}}/data/v1/projects/{{project_id}}/items"
+					},
+					"response": []
+				},
+				{
+					"name": "add new version to item",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{base_domain}}/data/v1/projects/{{project_id}}/items/{{item_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "download file",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{file_location}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "WebHook",
+			"description": "",
+			"item": [
+				{
+					"name": "Get WebHooks (2 legged token for derivative, 3 legged token for others",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"photosceneid\", data.Photoscene.photosceneid); "
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": "{{base_domain}}/webhooks/v1/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.file.added",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.file.added/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.file. modified - requestbin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1ehth231\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.file.modified/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.file. deleted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.file.deleted/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.file. moved",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.file.moved/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.file. copied",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.file.copied/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.folder.added",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.folder.added/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.folder. modified",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.folder.modified/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.folder. deleted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.folder.deleted/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.folder. moved",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.folder.moved/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - Event fs.folder. copied",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.folder.copied/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete WebHook",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.file.added/hooks/{{webhook_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook - All",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"https://requestb.in/1m167z61\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/hooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Wekhook Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"9bef9ed732dcfe91297d1986e267934df7b97c0e\"\n}"
+						},
+						"url": "{{base_domain}}/webhooks/v1/tokens"
+					},
+					"response": []
+				},
+				{
+					"name": "Create WebHook -Derivative-Post-Job-Msg",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var data = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+									"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+									"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"callbackUrl\": \"http://d8131ab2.ngrok.io/callback\",\n            \"scope\": {\n                 \"folder\": \"{{folder_id}}\"\n            }\n }"
+						},
+						"url": "{{base_domain}}/webhooks/v1/systems/data/events/fs.file.modified/hooks"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"var data = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"access_token\", data.access_token);",
+							"postman.setEnvironmentVariable(\"expires_in\", data.expires_in);",
+							"postman.setEnvironmentVariable(\"token_type\", data.token_type);"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "client_id",
+							"value": "{{client_id}}",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "{{client_secret}}",
+							"type": "text"
+						},
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"type": "text"
+						},
+						{
+							"key": "scope",
+							"value": "data:read data:write bucket:create bucket:read",
+							"type": "text"
+						},
+						{
+							"key": "",
+							"value": "",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": "{{base_domain}}/authentication/v1/authenticate"
+			},
+			"response": []
+		}
+	]
+}
